@@ -1,0 +1,399 @@
+Specification "processes_terms".
+Import "micro_weak_head".
+Import "weak_head".
+
+Theorem eq_app_left : forall T U S, 
+	T = U -> (app T S) = (app U S).
+    intros. case H1. search.
+
+Theorem eq_sub : forall (T : pt -> pt) U S, nabla x, 
+	T x = U x -> T S = U S.
+   intros. case H1. search.
+
+Theorem tms_with_no_ES_are_stable_by_substitution : forall T U, nabla x,
+    tm_with_no_ES (T x) -> 
+    tm_with_no_ES U -> tm_with_no_ES (T U).
+induction on 1. intros. case H1.
+    search.
+    search.
+    apply IH to H3 H2. search.
+    apply IH to H3 H2. apply IH to H4 H2. search.
+
+%%%%%%%%%%
+%%
+%%  Micro Weak Head Reduction
+%%
+%%%%%%%%%%
+
+Define weak_head_ctx : (pt -> pt) -> prop by
+    weak_head_ctx (h\h);
+    weak_head_ctx (h\ app (W h) U) := weak_head_ctx  W;
+    weak_head_ctx (h\ esub (x\ W x h) U) := nabla x, weak_head_ctx (W x).
+
+%%%%%%%%%%
+%%
+%%  Free Head Var and its Basic Properties
+%%
+%%%%%%%%%%
+
+Theorem adding_ctx_to_free_head_var : forall T, nabla x,
+    free_head_var (T x) x -> exists W, weak_head_ctx (W x) /\ max_whead_ctx (T x) (W x).
+induction on 1. intros. case H1.
+    exists x\ y\ y. search.
+    apply IH to H2. exists c\ a\ (app (W n1 n1 a) (U c)). search.
+    apply IH to H2. exists (c\a\ esub (b\ W n1 b n1 a)(U c)). search.
+
+Theorem free_head_var_is_stable_by_non-head_substitution : forall (T: pt -> pt -> pt) U, nabla x y,
+    free_head_var (T x y) x ->
+        free_head_var (T x (U x)) x.
+induction on 1. intros. case H1.
+    search.
+    apply IH to H2 with U = U. search.
+    apply IH to H2 with U = U. search.
+
+Theorem free_head_var_must_occur : forall T, nabla x,
+    free_head_var T x -> false.
+induction on 1. intros. case H1.
+    apply IH to H2.
+    apply IH to H2.
+
+Theorem free_head_var_must_occur_generalized : forall W U, nabla x,
+    weak_head_ctx (W x) ->
+    free_head_var ((W x) U) x -> false.
+induction on 1. intros. case H1.
+    apply free_head_var_must_occur to H2.
+    case H2. apply IH to H3 H4.
+    case H2. apply IH to H3 H4.
+
+Theorem wh_beta_and_free_head_var_are_incompatible : forall T U, nabla x,
+    wh_beta (T x) (U x) ->
+    free_head_var (T x) x -> false.
+induction on 1. intros. case H1.
+    case H2. case H3.
+    case H2. apply IH to H3 H4.
+
+
+%%%%%%%%%%
+%%
+%%  Basic properties of e and m steps
+%%
+%%%%%%%%%%
+
+Theorem applied_answers_are_db_steps : forall T U, 
+    is_answer T -> exists S, red_root_db (app T U) S.
+induction on 1. intros. case H1.
+    search.
+    apply IH to H2 with U = U. search.
+
+
+%%%%%%%%%%
+%%
+%%  Reachable Terms and their Basic Properties
+%%
+%%%%%%%%%%
+    
+Theorem redn_ms_preserves_reachable : forall T U,
+    redn (ctx_cl_tm red_root_ms) T U -> 
+    reachable_tm T -> reachable_tm U.
+induction on 1. intros. case H1.
+    search.
+    apply red_ms_preserves_reachable to H3 H2. apply IH to H4 H5. search.
+
+Theorem redn_ms_stable_by_app : forall T U S,
+ redn (ctx_cl_tm red_root_ms) T U -> redn (ctx_cl_tm red_root_ms) (app T S) (app U S).
+induction on 1. intros. case H1.
+    search.
+    apply IH to H3 with S = S. search.
+
+Theorem redn_ms_stable_by_subex : forall T U S, nabla x,
+ redn (ctx_cl_tm red_root_ms) (T x) (U x) -> redn (ctx_cl_tm red_root_ms) (esub T S) (esub U S).
+induction on 1. intros. case H1.
+    search.
+    apply IH to H3 with S = S. search.
+
+Theorem lifting_redn_ms_to_redn_mwh : forall T V,
+    redn (ctx_cl_tm red_root_ms) T V -> 
+        redn red_mwh T V.
+induction on 1. intros. case H1.
+    search.
+    apply IH to H3. search.
+
+
+%%%%%%%%%%
+%%
+%%  Unfolding of Reachable Terms and its Basic Properties
+%%
+%%%%%%%%%%
+
+Define unfolding_reachable : pt -> pt -> prop by
+   nabla x, unfolding_reachable x x
+;  unfolding_reachable (abs T) (abs T)
+;  unfolding_reachable (app T S) (app U S) := unfolding_reachable T U
+;  unfolding_reachable (esub T S) (U S) :=
+    nabla x, unfolding_reachable (T x) (U x).
+
+Theorem unfolding_is_a_function : forall T U S,
+	unfolding_reachable T U -> 
+	unfolding_reachable T S ->  U = S.
+induction on 1. intros. case H1.
+    case H2. search.
+    case H2. search.
+    case H2. apply IH to H3 H4. search.
+    case H2. apply IH to H3 H4. search.
+
+
+Theorem unfolding_on_tm_with_no_ES_is_equality : forall T, 
+  tm_with_no_ES T -> unfolding_reachable T T.
+
+induction on 1. intros. case H1.
+    search.
+    search.
+    apply IH to H2. search.
+
+Theorem every_reachable_term_unfolds_to_something : forall T, 
+  reachable_tm T -> exists U, unfolding_reachable T U.
+
+induction on 1. intros. case H1.
+    search.
+    search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+
+
+Theorem free_head_var_stable_by_unfolding : forall T U, nabla x,
+    free_head_var (T x) x ->
+    unfolding_reachable (T x) (U x) ->
+        free_head_var (U x) x.
+induction on 1. intros. case H1.
+    case H2. search.
+    case H2. apply IH to H3 H4. search.
+    case H2. apply IH to H3 H4. apply free_head_var_is_stable_by_non-head_substitution to H5 with U = U1. search.
+
+Theorem unfolding_and_equality : forall T U V,
+    unfolding_reachable T U ->
+    V = U -> 
+        unfolding_reachable T V.
+intros. case H1.
+    case H2. search.
+    case H2. search.
+    case H2. search.
+    case H2. search.
+
+Theorem unfolding_preserves_reachable : forall T U,
+    reachable_tm T ->
+    unfolding_reachable T U ->
+        tm_with_no_ES U /\ reachable_tm U.
+induction on 1. intros. case H1.
+    case H2. search.
+    case H2. search.
+    case H2. apply IH to H3 H5. search.
+    case H2. apply IH to H3 H5. apply tms_with_no_ES_are_stable_by_substitution to H6 H4. apply tms_with_no_ES_are_reachable to H8. search.
+
+
+Theorem answers_unfold_to_abstractions : forall T U,
+    is_answer T ->
+    unfolding_reachable T U -> exists S, U = abs S.
+induction on 1. intros. case H1.
+    case H2. search.
+    case H2. apply IH to H3 H4. search.
+
+%%%%%%%%%%
+%%
+%%  Projecting MWH on WH Beta via Unfolding
+%%
+%%%%%%%%%%
+
+
+Theorem projecting_db_root_steps : forall T U,
+	red_root_db T U ->  
+    reachable_tm T -> 
+    exists S V,
+        unfolding_reachable T S /\ 
+        unfolding_reachable U V /\ 
+        wh_beta S V.
+induction on 1. intros. case H1.
+    case H2. case H3. case H5. apply unfolding_on_tm_with_no_ES_is_equality to H6. search.
+    case H2. case H4. apply IH to H3 _. case H8. apply wh_beta_is_stable_by_subs to H10 with S = S. search.
+
+Theorem projecting_db_steps : forall T U,  
+	ctx_cl_tm red_root_db T U ->  
+    reachable_tm T -> 
+    exists S V,
+        unfolding_reachable T S /\ 
+        unfolding_reachable U V /\ 
+        wh_beta S V.
+induction on 1. intros. case H1.
+    backchain projecting_db_root_steps.
+    case H2. apply IH to H3 _. search.
+    case H2. apply IH to H3 _. apply wh_beta_is_stable_by_subs to H8 with S = S. search.
+
+
+Theorem projecting_unfolding_reachable: forall W S T, nabla x,
+    max_whead_ctx (T x) (W x) ->
+ 	reachable_tm (T x) ->
+ 	tm_with_no_ES S -> exists V U, nabla x,
+      unfolding_reachable (W x x) (V x) /\
+ 	  unfolding_reachable (W x S) (U x) /\ V S = U S.
+induction on 1. intros. apply unfolding_on_tm_with_no_ES_is_equality to H3. case H1.
+    search.
+    search.
+    search.
+    case H2. apply IH to H5 H6 H3. exists a\ app (V a) (U a). exists a\ app (U1 a) (U a). intros. split.
+        search.
+        search.
+        backchain eq_app_left.
+    case H2. apply IH to H5 H6 H3. exists a\ V (U a) a. exists a\ U1 (U a) a. intros. split.
+        search.
+        search.
+        apply eq_sub to H10 with x = n2, S = U S. search.
+
+
+Theorem projecting_ms_root_steps : forall T U,
+	red_root_ms T U ->  
+    reachable_tm T -> 
+    exists S,
+        unfolding_reachable T S /\ 
+        unfolding_reachable U S.
+intros. case H1. case H2. apply projecting_unfolding_reachable to H4 H5 H6 with x = n1, W = W. apply free_head_var_in_ctx_gives_tm to H3 H4. exists (V U1). split.
+    search.
+    case H9. assert unfolding_reachable (esub (x\W x U1) U1) (U2 U1). apply unfolding_and_equality to H11 H10. search.
+
+Theorem projecting_ms_steps : forall T U,
+	ctx_cl_tm red_root_ms T U ->  
+    reachable_tm T -> 
+    exists S, 
+        unfolding_reachable T S /\
+        unfolding_reachable U S.
+induction on 1. intros. case H1.
+    apply projecting_ms_root_steps to H3 H2. search.
+    case H2. apply IH to H3 _. search.
+    case H2. apply IH to H3 _. search.
+
+Theorem projecting_many_ms_steps : forall T U,
+	redn (ctx_cl_tm red_root_ms) T U ->  
+    reachable_tm T -> 
+    exists S, 
+        unfolding_reachable T S /\
+        unfolding_reachable U S.
+induction on 1. intros. case H1.
+    apply every_reachable_term_unfolds_to_something to H2. apply unfolding_preserves_reachable to H2 H3. search.
+    apply projecting_ms_steps to H3 H2. apply red_ms_preserves_reachable to H3 H2. apply IH to H4 H7. apply unfolding_is_a_function to H6 H8. search.
+
+Theorem micro_to_small_simulation : forall T U,
+	redn red_mwh T U ->  
+    reachable_tm T -> 
+    exists S V,
+        unfolding_reachable T S /\ 
+        unfolding_reachable U V /\ 
+        redn wh_beta S V.
+induction on 1. intros. case H1.
+    apply every_reachable_term_unfolds_to_something to H2. search.
+    case H3.
+        apply projecting_ms_steps to H5 H2. apply red_ms_preserves_reachable to H5 H2. apply IH to H4 H8. apply unfolding_is_a_function to H7 H9. search.
+        apply projecting_db_steps to H5 H2. apply red_db_preserves_reachable to H5 H2. apply IH to H4 H9. apply unfolding_is_a_function to H7 H10. search.
+    
+%%%%%%%%%%
+%%
+%%  ms_normal and its basic properties 
+%%
+%%%%%%%%%%
+
+Theorem ms_normal_is_stable_by_app : forall T U,
+    ms_normal T -> ms_normal (app T U).
+intros. case H1. 
+    apply applied_answers_are_db_steps to H2 with U = U. search.
+    search.
+    search.
+
+Theorem tms_with_no_ES_are_ms_normal : forall T,
+    tm_with_no_ES T -> ms_normal T.
+induction on 1. intros. case H1.
+    search.
+    search.
+    apply IH to H2. apply ms_normal_is_stable_by_app to H4 with U = U. search.
+
+Theorem ms_normal_stable_by_non-head_esub : forall (T : pt -> pt -> pt) U S, nabla x,
+    ms_normal (T x U) ->
+    weak_head_ctx (T x) -> ms_normal (esub (x\ T x U) S).
+intros. case H1.
+    search.
+    search.
+    apply free_head_var_must_occur_generalized to H2 H3. 
+    search.
+    
+Theorem plugging_ms_normal_tms_gives_ms_normal_tms : forall W U,
+    weak_head_ctx W ->
+    tm_with_no_ES U -> ms_normal (W U).
+induction on 1. intros. case H1.
+    apply tms_with_no_ES_are_ms_normal to H2. search.
+    apply IH to H3 H2. backchain ms_normal_is_stable_by_app. 
+    apply IH to H3 H2. apply ms_normal_stable_by_non-head_esub to H4 H3 with T = W1,x = n1, S = U1. search.
+
+
+%%%%%%%%%%
+%%
+%%  red_ms terminates
+%%
+%%%%%%%%%%
+
+Theorem ms_normalizing : forall T,
+ 	reachable_tm T -> 
+		exists U, 
+			redn (ctx_cl_tm red_root_ms) T U /\ 
+			ms_normal U.
+induction on 1. intros. case H1.
+    search.
+    search.
+    apply IH to H2. apply redn_ms_stable_by_app to H4 with S = U. apply ms_normal_is_stable_by_app to H5 with U = U. search.
+    apply IH to H2. apply redn_ms_stable_by_subex to H4 with S = U. case H5.
+        search.
+        search.
+        apply adding_ctx_to_free_head_var to H7. exists esub (a\ (W a a U)) U. split.
+            assert ctx_cl_tm red_root_ms (esub U1 U) (esub (a\W a a U) U). apply append_ms to H6 H10. search.
+            apply plugging_ms_normal_tms_gives_ms_normal_tms to H8 H3. apply ms_normal_stable_by_non-head_esub to H10 H8 with T = a\ W a a ,x = n1, S = U. search.
+        search.
+
+%%%%%%%%%%
+%%
+%%  Reflection of steps and sequences
+%%
+%%%%%%%%%%
+
+Theorem ms_normal_tms_reflect_wh_beta_as_red_db : forall T U S,
+    ms_normal T ->
+    unfolding_reachable T U ->
+    wh_beta U S -> 
+    		exists V, ctx_cl_tm red_root_db T V.
+intros. case H1.
+    apply answers_unfold_to_abstractions to H4 H2. case H3.
+    apply free_head_var_stable_by_unfolding to H4 H2. apply wh_beta_and_free_head_var_are_incompatible to H3 H5.
+    search.
+
+Theorem one_step_reflection : forall T U S, 
+    unfolding_reachable T U -> 
+    wh_beta U S  -> 
+    reachable_tm T -> 
+        exists V W, 
+        		redn (ctx_cl_tm red_root_ms) T V /\ 
+			ctx_cl_tm red_root_db V W /\ 
+			unfolding_reachable W S.
+intros. apply ms_normalizing to H3. apply projecting_many_ms_steps to H4 H3. apply unfolding_is_a_function to H1 H6. apply ms_normal_tms_reflect_wh_beta_as_red_db to H5 H7 H2. apply redn_ms_preserves_reachable to H4 H3. apply projecting_db_steps to H8 H9. apply unfolding_is_a_function to H10 H7. apply wh_beta_is_deterministic to H2 H12. search.
+
+Theorem small_to_micro_simulation : forall T U S, 
+    unfolding_reachable T U -> 
+    redn wh_beta U S  -> 
+    reachable_tm T -> 
+        exists V, 
+        		redn red_mwh T V /\ 
+			unfolding_reachable V S.
+induction on 2. intros. case H2.
+    search.
+    apply one_step_reflection to H1 H4 H3. apply lifting_redn_ms_to_redn_mwh to H6. assert red_mwh V W. apply append_mwh to H9 H10. apply redn_mwh_preserves_reachable to H11 H3. apply IH to H8 H5 H12. apply append_mwh_sequence to H11 H13. search.
+
+Theorem small_to_micro_simulation_no_ES : forall T S, 
+    tm_with_no_ES T  -> 
+    redn wh_beta T S  -> 
+        exists V, 
+        		redn red_mwh T V /\ 
+			unfolding_reachable V S.
+intros. apply tms_with_no_ES_are_reachable to H1. apply unfolding_on_tm_with_no_ES_is_equality to H1. apply small_to_micro_simulation to H4 H2 H3. search.

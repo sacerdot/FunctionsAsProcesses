@@ -1,0 +1,7 @@
+Specification "processes_terms".
+
+Define redn_nat : (pt -> pt -> prop) -> pt -> pt -> nat -> prop by
+   redn_nat R T T z;
+   redn_nat R T U (s N):= exists S, R T S /\ redn_nat R S U N.
+
+

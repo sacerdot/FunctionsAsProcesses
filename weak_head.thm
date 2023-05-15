@@ -1,0 +1,28 @@
+Specification "processes_terms".
+
+%%%%%%%%%%
+%%
+%%  Lambda Calculus and Weak Head Beta Reduction
+%%
+%%%%%%%%%%
+    
+Define wh_beta : pt -> pt -> prop by
+    wh_beta (app (abs T) U) S := S = T U;
+    wh_beta (app T U) (app S U) := wh_beta T S.
+
+Theorem wh_beta_is_stable_by_subs : forall T U (S : pt), nabla x,
+    wh_beta (T x) (U x) -> wh_beta (T S) (U S).
+induction on 1. intros. case H1.
+    search.
+    apply IH to H2 with S = S. search.
+
+Theorem wh_beta_is_deterministic : forall T U S,
+    wh_beta T U ->
+    wh_beta T S -> U = S.
+induction on 1. intros. case H1.
+    case H2.
+        search.
+        case H3.
+    case H2.
+        case H3.
+        apply IH to H3 H4. search.

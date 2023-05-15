@@ -1,0 +1,648 @@
+Specification "processes_terms".
+Import "common_definitions".
+
+%%%%%%%%%
+% STRUCTURAL EQUIVALENCE
+%%%%%%%%%
+
+Define str_eq_root : pt -> pt -> prop by
+/* neutral element */
+   str_eq_root (par P zero) P
+;  str_eq_root (par zero P) P
+;  str_eq_root P (par P zero)
+;  str_eq_root P (par zero P)
+
+/* zero scope */
+;  str_eq_root (nu (x\ P)) P
+;  str_eq_root P (nu (x\ P))
+
+/* commutativity */ 
+;  str_eq_root (par P Q) (par Q P) 
+
+/* associativity */
+;  str_eq_root (par (par P Q) R) (par P (par Q R))
+;  str_eq_root (par P (par Q R)) (par (par P Q) R)
+
+/* scope extrusion */
+;  str_eq_root (nu (x\par P (Q x))) (par P (nu Q))
+;  str_eq_root (nu (x\par (P x) Q)) (par (nu P) Q)
+;  str_eq_root (par P (nu Q)) (nu (x\par P (Q x)))
+;  str_eq_root (par (nu P) Q) (nu (x\par (P x) Q))
+
+/* parallel scope delimiters */
+;  str_eq_root (nu (x\ nu (P x))) (nu (y\ nu (x\ (P x y)))).
+
+Define str_eq : pt -> pt -> prop by
+    /* injection of the root case */
+    str_eq P Q := str_eq_root P Q;  
+
+    /* equivalence relation clauses */
+    str_eq P P;
+    str_eq P R := exists Q, str_eq P Q /\ str_eq Q R;  
+
+    /* contextual closure clauses */
+    str_eq (nu P) (nu Q) := nabla x, str_eq (P x) (Q x);
+    str_eq (par P R) (par Q R) := str_eq P Q;
+    str_eq (par P Q) (par P R) := str_eq Q R. 
+
+/* str_eq_root is symmetrical */
+Theorem str_eq_root_sym : forall P Q, 
+	str_eq_root P Q -> str_eq_root Q P.
+intros. case H1.
+    search. 
+    search.
+    search.
+    search.
+    search.
+    search.
+    search.
+    search.
+    search.
+    search.
+    search.
+    search.
+    search.
+    search.
+
+Theorem str_eq_sym : forall P Q, 
+    str_eq P Q -> str_eq Q P.
+induction on 1. intros. case H1.
+    apply str_eq_root_sym to H2. search.
+    search.
+    apply IH to H2. apply IH to H3. search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+
+%%%%%%%%%
+%
+% PI REDUCTIONS
+%
+%%%%%%%%%
+
+Define ctx_cl_pr : (pt -> pt -> prop) -> pt -> pt -> prop by
+   ctx_cl_pr R P Q := R P Q;
+   ctx_cl_pr R (par P1 Q) (par P2 Q) := ctx_cl_pr R P1 P2;
+   ctx_cl_pr R (par P Q1) (par P Q2) := ctx_cl_pr R Q1 Q2;
+   ctx_cl_pr R (nu P1) (nu P2) := nabla y, ctx_cl_pr R (P1 y) (P2 y).
+   
+
+%%%%%%%%%
+% ORDINARY BINARY REDUCTION
+%%%%%%%%%
+
+Define ord_pi-red_root_bin : pt -> pt -> prop by
+    nabla x y z, ord_pi-red_root_bin (par (out2 x y z) (in2 x (P x y z))) (P x y z y z).
+
+Define ord_pi-red_root_rep : pt -> pt -> prop by
+    nabla x y, ord_pi-red_root_rep (par (out x y) (in x (P x y)))
+      (par (P x y y) (in x (P x y))).
+
+
+%%%%%%%%%
+% NEW BINARY REDUCTION
+%%%%%%%%%
+    
+Define new_pi-red_root_bin : pt -> pt -> prop by
+	nabla x y z, new_pi-red_root_bin (par (out2 x y z) (in2 x (P x y z))) (P x y z y z)
+;	nabla x y z, new_pi-red_root_bin (par (in2 x (P x y z)) (out2 x y z)) (P x y z y z)
+
+;	new_pi-red_root_bin (par (par P Q) R) (par S Q) := new_pi-red_root_bin (par P R) S
+;	new_pi-red_root_bin (par (par P Q) R) (par P S) := new_pi-red_root_bin (par Q R) S
+;	new_pi-red_root_bin (par (nu P) Q) (nu R) := nabla x, new_pi-red_root_bin (par (P x) Q) (R x)
+
+;  new_pi-red_root_bin (par P (par Q R)) (par S R) := new_pi-red_root_bin (par P Q) S
+;  new_pi-red_root_bin (par P (par Q R)) (par Q S) := new_pi-red_root_bin (par P R) S
+;  new_pi-red_root_bin (par P (nu Q)) (nu R) := nabla x, new_pi-red_root_bin (par P (Q x)) (R x).
+
+%%%%%%%%%
+% NEW BINARY REDUCTION
+%%%%%%%%%
+
+Define  new_pi-red_root_rep : pt -> pt -> prop by
+   nabla x y, new_pi-red_root_rep (par (out x y) (in x (P x y)))
+      (par (P x y y) (in x (P x y)))
+;  nabla x y, new_pi-red_root_rep (par (in x (P x y)) (out x y))
+      (par (in x (P x y)) (P x y y))
+
+;  new_pi-red_root_rep (par (par P Q) R) (par S Q) := new_pi-red_root_rep (par P R) S
+;  new_pi-red_root_rep (par (par P Q) R) (par P S) := new_pi-red_root_rep (par Q R) S
+;  new_pi-red_root_rep (par (nu P) Q) (nu R) := nabla x, new_pi-red_root_rep (par (P x) Q) (R x)
+
+;  new_pi-red_root_rep (par P (par Q R)) (par S R) := new_pi-red_root_rep (par P Q) S
+;  new_pi-red_root_rep (par P (par Q R)) (par Q S) := new_pi-red_root_rep (par P R) S
+;  new_pi-red_root_rep (par P (nu Q)) (nu R) := nabla x, new_pi-red_root_rep (par P (Q x)) (R x).
+
+%%%%%%%%%
+% FULL REDUCTION
+%%%%%%%%%
+
+Define new_pi-red : pt -> pt -> prop by
+    new_pi-red P Q := ctx_cl_pr new_pi-red_root_rep P Q;
+    new_pi-red P Q := ctx_cl_pr new_pi-red_root_bin P Q.
+
+%%%%%%%%%
+% BASIC PROPERTIES OF REDUCTION
+%%%%%%%%%
+
+Theorem root_bin_parallel_symmetry : forall P Q S, 
+    new_pi-red_root_bin (par P Q) S -> new_pi-red_root_bin (par Q P) S.
+induction on 1. intros. case H1.
+    search.
+    search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+
+Theorem root_rep_parallel_symmetry : forall P Q S, 
+    new_pi-red_root_rep (par P Q) S -> 
+        exists R, new_pi-red_root_rep (par Q P) R /\ str_eq S R.
+induction on 1. intros. case H1.
+    search.
+    search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+    
+Theorem root_bin_no_creation_of_free_names : forall P (R : pt -> pt), 
+   nabla x, new_pi-red_root_bin P (R x) -> exists S, nabla x, S = R x.
+induction on 1. intros. case H1.
+   search. 
+   search.
+   apply IH to H2. search.
+   apply IH to H2. search.
+   apply IH to H2. search.
+   apply IH to H2. search.
+   apply IH to H2. search.
+   apply IH to H2. search.
+
+Theorem bin_no_creation_of_free_names : forall P (Q : pt -> pt), 
+   nabla x, ctx_cl_pr new_pi-red_root_bin P (Q x) -> exists R, nabla y, R = Q y.
+induction on 1. intros. case H1.
+   apply root_bin_no_creation_of_free_names to H2. search.
+   apply IH to H2 with x = n1. search.
+   apply IH to H2 with x = n1. search.
+   apply IH to H2 with x = n1. search.
+
+Theorem root_rep_no_creation_of_free_names : forall P (R : pt -> pt), 
+   nabla x, new_pi-red_root_rep P (R x) -> exists S, nabla x, S = R x.
+induction on 1. intros. case H1.
+   search. search.
+   apply IH to H2. search.
+   apply IH to H2. search.
+   apply IH to H2. search.
+   apply IH to H2. search.
+   apply IH to H2. search.
+   apply IH to H2. search.
+
+Theorem rep_no_creation_of_free_names : forall P (Q : pt -> pt), 
+   nabla x, ctx_cl_pr new_pi-red_root_rep P (Q x) -> exists R, nabla y, R = Q y.
+induction on 1. intros. case H1.
+   apply root_rep_no_creation_of_free_names to H2. search.
+   apply IH to H2 with x = n1. search.
+   apply IH to H2 with x = n1. search.
+   apply IH to H2 with x = n1. search.
+
+%%%%%%%%%
+% AUXILIARY LEMMAS FOR THE STRONG POSTPONEMENT THEOREM of BIN
+%%%%%%%%%
+
+Theorem root_bin_zero_case : forall P S,
+    new_pi-red_root_bin (par P zero) S -> false.
+induction on 1. intros. case H1.
+    apply IH to H2.
+    apply IH to H2.
+    apply IH to H2.
+
+Theorem aux_properties_postponement_parallel_cases_bin : forall P Q R S, 
+   new_pi-red_root_bin (par (par P Q) R) S
+   -> (exists T, new_pi-red_root_bin (par P R) T /\ str_eq S (par T Q))
+      \/ exists T, new_pi-red_root_bin (par Q R) T /\ str_eq S (par P T).
+induction on 1. intros. case H1.
+   search. 
+   search.
+   apply IH to H2. case H3. 
+      left. exists par T R1. split.
+         search.
+        unfold 3. exists par (par T Q) R1. search.
+      right. exists par T R1. split.
+         search.
+         unfold 3. exists par (par T R1) P. split. search.
+            unfold 3. exists par (par P T) R1. search.
+   apply IH to H2. case H3. 
+      search.
+      right. exists par Q1 T. split. search.
+         unfold 3. exists par Q1 (par P T). search.
+   apply IH to H2. case H3.
+      left. exists nu T. split. search.
+         unfold 3. exists nu (x\par (T x) Q). search. 
+      search.
+
+Theorem aux_properties_postponement_name_restriction_bin : forall P Q R,
+   new_pi-red_root_bin (par (nu P) Q) R
+   -> exists S, nabla x, new_pi-red_root_bin (par (P x) Q) (S x) 
+      /\ str_eq R (nu S).
+induction on 1. intros. case H1.
+   search.
+   apply IH to H2. exists x\par (S1 x) R1. intros. split. search.
+      unfold 3. exists par (nu S1) R1. search.
+   apply IH to H2. search.
+   apply IH to H2. search.
+
+
+%%%%%%%%%
+% STRONG POSTPONEMENT THEOREM FOR BINARY COMMIUNICATION
+%%%%%%%%%
+
+Theorem strong_postponement_root_bin : forall P1 P2 Q2, 
+   str_eq_root P2 P1 -> ctx_cl_pr new_pi-red_root_bin P2 Q2 
+   -> exists Q1, ctx_cl_pr new_pi-red_root_bin P1 Q1 /\ str_eq Q2 Q1.
+intros. case H1.
+    case H2. 
+        apply root_bin_zero_case to H3. 
+        exists P4. search.
+        case H3. case H4.
+    case H2.
+        apply root_bin_parallel_symmetry to H3. apply root_bin_zero_case to H4.
+        case H3. case H4.
+        exists Q3. search.
+    exists par Q2 zero. search.
+    exists par zero Q2. search.
+    case H2.
+        case H3. 
+        apply bin_no_creation_of_free_names to H3. search.
+    search.
+    case H2.
+        apply root_bin_parallel_symmetry to H3. search.
+        exists par Q P4. search.
+        exists par Q3 P. search.
+    case H2.
+        apply aux_properties_postponement_parallel_cases_bin to H3. case H4.
+            search.
+            search.
+        case H3.
+            search.
+            search.
+            search.
+        search.
+    case H2.
+        apply root_bin_parallel_symmetry to H3. apply aux_properties_postponement_parallel_cases_bin to H4. case H5.
+            apply root_bin_parallel_symmetry to H6. search.
+            apply root_bin_parallel_symmetry to H6. search.
+        search.
+        case H3.
+            search.
+            search.
+            search.
+    case H2.
+        case H3.
+        case H3.
+            search.
+            apply bin_no_creation_of_free_names to H4. search.
+            search.
+    case H2.
+        case H3.
+        case H3.
+            search.
+            search.
+            apply bin_no_creation_of_free_names to H4. search.
+    case H2.
+        apply root_bin_parallel_symmetry to H3. apply aux_properties_postponement_name_restriction_bin to H4. apply root_bin_parallel_symmetry to H5. search.
+        search.
+        case H3. 
+            case H4. 
+            search.
+    case H2.
+        apply aux_properties_postponement_name_restriction_bin to H3. search.
+        case H3.
+            case H4.
+            search.
+            search.
+    case H2. 
+        case H3. 
+        case H3.
+            case H4.
+            search.
+
+Theorem root_bin_postponement_left_of_par : forall P1 P2 Q R2,
+      str_eq P2 P1 -> new_pi-red_root_bin (par P2 Q) R2
+      -> exists R1, new_pi-red_root_bin (par P1 Q) R1 /\ str_eq R2 R1.
+induction on 1. intros. case H1.
+    case H3.
+        apply aux_properties_postponement_parallel_cases_bin to H2. case H4.
+            search.
+            apply root_bin_parallel_symmetry to H5. apply root_bin_zero_case to H7.
+        apply aux_properties_postponement_parallel_cases_bin to H2. case H4.
+            apply root_bin_parallel_symmetry to H5. apply root_bin_zero_case to H7.
+            search.
+        search.
+        search.
+        apply aux_properties_postponement_name_restriction_bin to H2. apply root_bin_no_creation_of_free_names to H4. search.
+        search.
+        apply aux_properties_postponement_parallel_cases_bin to H2. case H4. 
+            search. 
+            search.
+        apply aux_properties_postponement_parallel_cases_bin to H2. case H4. 
+            apply aux_properties_postponement_parallel_cases_bin to H5. case H7. 
+                search. 
+                search.
+            search.
+        apply aux_properties_postponement_parallel_cases_bin to H2. case H4. 
+            search.
+            apply aux_properties_postponement_parallel_cases_bin to H5. case H7. 
+                search.
+                search.
+        apply aux_properties_postponement_name_restriction_bin to H2. apply aux_properties_postponement_parallel_cases_bin to H4. case H6.           
+            apply root_bin_no_creation_of_free_names to H7. search.
+            search.
+        apply aux_properties_postponement_name_restriction_bin to H2. apply aux_properties_postponement_parallel_cases_bin to H4. case H6.
+                search.          
+                apply root_bin_no_creation_of_free_names to H7. search.
+        apply aux_properties_postponement_parallel_cases_bin to H2. case H4.
+            search.
+            apply aux_properties_postponement_name_restriction_bin to H5. search.
+        apply aux_properties_postponement_parallel_cases_bin to H2. case H4.
+            apply aux_properties_postponement_name_restriction_bin to H5. search.
+            search.
+        apply aux_properties_postponement_name_restriction_bin to H2.
+            apply aux_properties_postponement_name_restriction_bin to H4. search.
+    search.
+    apply IH to H3 H2. apply IH to H4 H5. search.
+    apply aux_properties_postponement_name_restriction_bin to H2. 
+        apply IH to H3 H4. search.
+    apply aux_properties_postponement_parallel_cases_bin to H2. case H4.
+        apply IH to H3 H5. search.
+        search.
+    apply aux_properties_postponement_parallel_cases_bin to H2. case H4.
+        search.
+        apply IH to H3 H5. search.
+
+Theorem strong_postponement_bin : forall P1 P2 Q2, 
+   str_eq P2 P1 -> ctx_cl_pr new_pi-red_root_bin P2 Q2 
+   -> exists Q1, ctx_cl_pr new_pi-red_root_bin P1 Q1 /\ str_eq Q2 Q1.
+induction on 1. intros. case H1.
+
+    % injection of the root case
+    apply strong_postponement_root_bin to H3 H2. search.
+    
+    % reflexivity
+    search.
+
+    % transitivity
+    apply IH to H3 H2. apply IH to H4 H5. search.
+    
+    % contextual closure nu
+    case H2.
+        case H4. 
+        apply IH to H3 H4. search.
+    
+    % contextual closure par left
+    case H2. 
+        apply root_bin_postponement_left_of_par to H3 H4. search.
+        apply IH to H3 H4. search.  
+        search.
+    
+    % contextual closure par right
+    case H2.
+        apply root_bin_parallel_symmetry to H4. apply root_bin_postponement_left_of_par to H3 H5. apply root_bin_parallel_symmetry to H6. search.
+        search.
+        apply IH to H3 H4. search.
+        
+
+%%%%%%%%%
+% AUXILIARY LEMMAS FOR THE STRONG POSTPONEMENT THEOREM OF REP
+%%%%%%%%%
+
+Theorem root_rep_zero_case : forall P S,
+    new_pi-red_root_rep (par P zero) S -> false.
+induction on 1. intros. case H1.
+    apply IH to H2.
+    apply IH to H2.
+    apply IH to H2.
+
+Theorem aux_properties_postponement_parallel_cases_rep : forall P Q R S, 
+   new_pi-red_root_rep (par (par P Q) R) S
+   -> (exists T, new_pi-red_root_rep (par P R) T /\ str_eq S (par T Q))
+      \/ exists T, new_pi-red_root_rep (par Q R) T /\ str_eq S (par P T).
+induction on 1. intros. case H1.
+   search. 
+   search.
+   apply IH to H2. case H3. 
+      left. exists par T R1. split.
+         search.
+        unfold 3. exists par (par T Q) R1. search.
+      right. exists par T R1. split.
+         search.
+         unfold 3. exists par (par T R1) P. split. search.
+            unfold 3. exists par (par P T) R1. search.
+   apply IH to H2. case H3. 
+      search.
+      right. exists par Q1 T. split. search.
+         unfold 3. exists par Q1 (par P T). search.
+   apply IH to H2. case H3.
+      left. exists nu T. split. search.
+         unfold 3. exists nu (x\par (T x) Q). search. 
+      search.
+
+Theorem aux_properties_postponement_name_restriction_rep : forall P Q R,
+   new_pi-red_root_rep (par (nu P) Q) R
+   -> exists S, nabla x, new_pi-red_root_rep (par (P x) Q) (S x) 
+      /\ str_eq R (nu S).
+induction on 1. intros. case H1.
+   search.
+   apply IH to H2. exists x\par (S1 x) R1. intros. split. search.
+      unfold 3. exists par (nu S1) R1. search.
+   apply IH to H2. search.
+   apply IH to H2. search.
+
+
+%%%%%%%%%
+% STRONG POSTPONEMENT THEOREM FOR UNARY REPLICATION
+%%%%%%%%%
+
+Theorem strong_postponement_root_rep : forall P1 P2 Q2, 
+   str_eq_root P2 P1 -> 
+   ctx_cl_pr new_pi-red_root_rep P2 Q2 -> 
+      exists Q1, ctx_cl_pr new_pi-red_root_rep P1 Q1 /\ str_eq Q2 Q1.
+intros. case H1.
+    case H2. 
+        apply root_rep_zero_case to H3. 
+        exists P4. search.
+        case H3. case H4.
+    case H2.
+        apply root_rep_parallel_symmetry to H3. apply root_rep_zero_case to H4.
+        case H3. case H4.
+        exists Q3. search.
+    exists par Q2 zero. search.
+    exists par zero Q2. search.
+    case H2.
+        case H3.
+        apply rep_no_creation_of_free_names to H3. search.
+    search.
+    case H2.
+        apply root_rep_parallel_symmetry to H3. search.
+        exists par Q P4. search.
+        exists par Q3 P. search.
+    case H2.
+        apply aux_properties_postponement_parallel_cases_rep to H3. case H4.
+            search.
+            search.
+        case H3.
+            search.
+            search.
+            search.
+        search.
+    case H2.
+        apply root_rep_parallel_symmetry to H3. apply aux_properties_postponement_parallel_cases_rep to H4. case H6.
+            apply root_rep_parallel_symmetry to H7. search.
+            apply root_rep_parallel_symmetry to H7. search.
+        search.
+        case H3.
+            search.
+            search.
+            search.
+    case H2.
+        case H3.
+        case H3.
+            search.
+            apply rep_no_creation_of_free_names to H4. search.
+            search.
+    case H2.
+        case H3.
+        case H3.
+            search.
+            search.
+            apply rep_no_creation_of_free_names to H4. search.
+    case H2.
+        apply root_rep_parallel_symmetry to H3. apply aux_properties_postponement_name_restriction_rep to H4. apply root_rep_parallel_symmetry to H6. search.
+        search.
+        case H3. 
+            case H4. 
+            search.
+    case H2.
+        apply aux_properties_postponement_name_restriction_rep to H3. search.
+        case H3.
+            case H4.
+            search.
+            search.
+    case H2. 
+        case H3. 
+        case H3.
+            case H4.
+            search.
+
+Theorem root_rep_postponement_left_of_par : forall P1 P2 Q R2,
+      str_eq P2 P1 -> 
+      new_pi-red_root_rep (par P2 Q) R2 -> 
+      		exists R1, new_pi-red_root_rep (par P1 Q) R1 /\ 
+							str_eq R2 R1.
+induction on 1. intros. case H1.
+    case H3.
+        apply aux_properties_postponement_parallel_cases_rep to H2. case H4.
+            search.
+            apply root_rep_parallel_symmetry to H5. apply root_rep_zero_case to H7.
+        apply aux_properties_postponement_parallel_cases_rep to H2. case H4.
+            apply root_rep_parallel_symmetry to H5. apply root_rep_zero_case to H7.
+            search.
+        search.
+        search.
+        apply aux_properties_postponement_name_restriction_rep to H2. apply root_rep_no_creation_of_free_names to H4. search.
+        search.
+        apply aux_properties_postponement_parallel_cases_rep to H2. case H4. 
+            search. 
+            search.
+        apply aux_properties_postponement_parallel_cases_rep to H2. case H4. 
+            apply aux_properties_postponement_parallel_cases_rep to H5. case H7. 
+                search. 
+                search.
+            search.
+        apply aux_properties_postponement_parallel_cases_rep to H2. case H4. 
+            search.
+            apply aux_properties_postponement_parallel_cases_rep to H5. case H7. 
+                search.
+                search.
+        apply aux_properties_postponement_name_restriction_rep to H2. apply aux_properties_postponement_parallel_cases_rep to H4. case H6.           
+            apply root_rep_no_creation_of_free_names to H7. search.
+            search.
+        apply aux_properties_postponement_name_restriction_rep to H2. apply aux_properties_postponement_parallel_cases_rep to H4. case H6.
+                search.          
+                apply root_rep_no_creation_of_free_names to H7. search.
+        apply aux_properties_postponement_parallel_cases_rep to H2. case H4.
+            search.
+            apply aux_properties_postponement_name_restriction_rep to H5. search.
+        apply aux_properties_postponement_parallel_cases_rep to H2. case H4.
+            apply aux_properties_postponement_name_restriction_rep to H5. search.
+            search.
+        apply aux_properties_postponement_name_restriction_rep to H2.
+            apply aux_properties_postponement_name_restriction_rep to H4. search.
+    search.
+    apply IH to H3 H2. apply IH to H4 H5. search.
+    apply aux_properties_postponement_name_restriction_rep to H2. 
+        apply IH to H3 H4. search.
+    apply aux_properties_postponement_parallel_cases_rep to H2. case H4.
+        apply IH to H3 H5. search.
+        search.
+    apply aux_properties_postponement_parallel_cases_rep to H2. case H4.
+        search.
+        apply IH to H3 H5. search.
+
+Theorem strong_postponement_rep : forall P1 P2 Q2, 
+   str_eq P2 P1 -> 
+   ctx_cl_pr new_pi-red_root_rep P2 Q2 -> 
+   		exists Q1, ctx_cl_pr new_pi-red_root_rep P1 Q1 /\ 
+						str_eq Q2 Q1.
+induction on 1. intros. case H1.
+
+    % injection of the root case
+    apply strong_postponement_root_rep to H3 H2. search.
+    
+    % reflexivity
+    search.
+
+    % transitivity
+    apply IH to H3 H2. apply IH to H4 H5. search.
+    
+    % contextual closure nu
+    case H2.
+        case H4. 
+        apply IH to H3 H4. search.
+    
+    % contextual closure par left
+    case H2. 
+        apply root_rep_postponement_left_of_par to H3 H4. search.
+        apply IH to H3 H4. search.  
+        search.
+    
+    % contextual closure par right
+    case H2.
+        apply root_rep_parallel_symmetry to H4. apply root_rep_postponement_left_of_par to H3 H5. apply root_rep_parallel_symmetry to H7. search.
+        search.
+        apply IH to H3 H4. search.
+
+%%%%%%%%%
+% STRONG POSTPONEMENT THEOREM ALL TOGETHER
+%%%%%%%%%
+
+Theorem local_strong_postponement : forall P1 P2 Q2, 
+   str_eq P2 P1 -> 
+   new_pi-red P2 Q2 -> 
+   		exists Q1, new_pi-red P1 Q1 /\ 
+						str_eq Q2 Q1.
+intros. case H2.
+    apply strong_postponement_rep to H1 H3. search.
+    apply strong_postponement_bin to H1 H3. search.
+  
+  Theorem strong_postponement_streq : forall P1 P2 Q2 N, 
+   str_eq P2 P1 -> 
+   redn_nat new_pi-red P2 Q2 N -> 
+   		exists Q1, redn_nat new_pi-red P1 Q1 N /\ 
+						str_eq Q2 Q1.
+induction on 2. intros. case H2.
+    search.
+    apply local_strong_postponement to H1 H3. apply IH to H6 H4. exists Q3. search.

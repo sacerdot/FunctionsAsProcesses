@@ -1,0 +1,103 @@
+Specification "processes_terms".
+Import "postponement_of_structural_equivalence".
+
+%%%%%%%%%
+% EQUIVALENCE OF PRESENTATIONS
+%%%%%%%%%
+
+Theorem ord_to_new_bin_without_str_eq : forall P Q, 
+   ctx_cl_pr ord_pi-red_root_bin P Q -> ctx_cl_pr new_pi-red_root_bin P Q.
+induction on 1. intros. case H1.
+    case H2. search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+
+Theorem ord_to_new_red_bin : forall P P1 P2 Q, 
+    str_eq P P1 ->
+    ctx_cl_pr ord_pi-red_root_bin P1 P2 -> 
+    str_eq P2 Q ->        
+    exists Q1, 
+        ctx_cl_pr new_pi-red_root_bin P Q1 /\
+        str_eq Q1 Q.
+intros. apply str_eq_sym to H1. apply ord_to_new_bin_without_str_eq to H2. apply strong_postponement_bin to H4 H5. apply str_eq_sym to H7. search.
+
+% for the proof of the following theorem, 'search' would also work without
+% the preceding 'exists' but it would take forever for it to find the right
+% instantiations, the 'exists' speed the search up
+Theorem new_root_to_ord_bin : forall P Q, 
+    new_pi-red_root_bin P Q ->
+    exists P1 P2, 
+        str_eq P P1 /\
+        ctx_cl_pr ord_pi-red_root_bin P1 P2 /\ 
+        str_eq P2 Q.
+induction on 1. intros. case H1.
+    search.
+    search.
+    apply IH to H2. exists (par Q1 P2). exists (par Q1 P3). search.
+    apply IH to H2. exists (par P1 P2). exists (par P1 P3). search. 
+    apply IH to H2. exists (nu P2). exists (nu P3). search.
+    apply IH to H2. exists (par P2 R). exists (par P3 R). search. 
+    apply IH to H2. exists (par P2 Q1). exists (par P3 Q1). search.
+    apply IH to H2. exists (nu P2). exists (nu P3). search.
+
+Theorem new_to_ord_bin : forall P Q, 
+    ctx_cl_pr new_pi-red_root_bin P Q ->
+    exists P1 P2, 
+        str_eq P P1 /\
+        ctx_cl_pr ord_pi-red_root_bin P1 P2 /\ 
+        str_eq P2 Q.
+induction on 1. intros. case H1.
+    apply new_root_to_ord_bin to H2. search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+
+Theorem ord_to_new_rep_without_str_eq : forall P Q, 
+   ctx_cl_pr ord_pi-red_root_rep P Q -> ctx_cl_pr new_pi-red_root_rep P Q.
+induction on 1. intros. case H1.
+    case H2. search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+
+Theorem ord_to_new_rep : forall P P1 P2 Q, 
+    str_eq P P1 ->
+    ctx_cl_pr ord_pi-red_root_rep P1 P2 -> 
+    str_eq P2 Q ->        
+    exists Q1, 
+        ctx_cl_pr new_pi-red_root_rep P Q1 /\
+        str_eq Q1 Q.
+intros. apply str_eq_sym to H1. apply ord_to_new_rep_without_str_eq to H2. apply strong_postponement_rep to H4 H5. apply str_eq_sym to H7. search.
+
+% for the proof of the following theorem, 'search' would also work without
+% the preceding 'exists' but it would take forever for it to find the right
+% instantiations, the 'exists' speed the search up
+Theorem new_root_to_ord_rep : forall P Q, 
+    new_pi-red_root_rep P Q ->
+    exists P1 P2, 
+        str_eq P P1 /\
+        ctx_cl_pr ord_pi-red_root_rep P1 P2 /\ 
+        str_eq P2 Q.
+induction on 1. intros. case H1.
+    search.
+    search.
+    apply IH to H2. exists (par Q1 P2). exists (par Q1 P3). search.
+    apply IH to H2. exists (par P1 P2). exists (par P1 P3). search. 
+    apply IH to H2. exists (nu P2). exists (nu P3). search.
+    apply IH to H2. exists (par P2 R). exists (par P3 R). search. 
+    apply IH to H2. exists (par P2 Q1). exists (par P3 Q1). search.
+    apply IH to H2. exists (nu P2). exists (nu P3). search.
+
+Theorem new_to_ord_rep : forall P Q, 
+    ctx_cl_pr new_pi-red_root_rep P Q ->
+    exists P1 P2, 
+        str_eq P P1 /\
+        ctx_cl_pr ord_pi-red_root_rep P1 P2 /\ 
+        str_eq P2 Q.
+induction on 1. intros. case H1.
+    apply new_root_to_ord_rep to H2. search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+    apply IH to H2. search.
+    

@@ -1,0 +1,100 @@
+Specification "processes_terms".
+Import "micro_weak_head".
+Import "weak_head".
+
+%%%%%%%%%%
+%%
+%%  ms_normal is well defined.
+%%
+%%%%%%%%%%
+
+%%%
+% First case for ms_normal (answers)
+%%%
+
+Theorem answers_have_no_free_head_var : forall T, nabla x,
+    is_answer (T x) ->
+    free_head_var (T x) x -> false.
+induction on 1. intros. case H1.
+    case H2.
+    case H2. apply IH to H3 H4.
+
+
+Theorem answers_are_ms_normal : forall T U,
+    is_answer T ->
+    ctx_cl_tm red_root_ms T U -> false.
+induction on 1. intros. case H1.
+    case H2. case H3.
+    case H2. 
+        case H4. apply answers_have_no_free_head_var to H3 H5. 
+        apply IH to H3 H4.
+
+%%%
+% Second case for ms_normal (head variable)
+%%%
+
+Theorem free_head_var_is_a_function : forall T, nabla x y,
+	free_head_var (T x y) x  -> 
+	free_head_var (T x y) y  -> false.
+induction on 1. intros. case H1.
+   case H2.
+   case H2. apply IH to H3 H4.
+   case H2. apply IH to H3 H4.
+
+Theorem term_with_free_head_var_are_ms_normal : forall T U, nabla x,
+    ctx_cl_tm red_root_ms (T x) (U x) ->
+    free_head_var (T x) x -> false.
+induction on 1. intros. case H1.
+    case H3. case H2. apply free_head_var_is_a_function to H7 H5.
+    case H2. apply IH to H3 H4.
+    case H2. apply IH to H3 H4.
+
+
+
+%%%
+% Third case for ms_normal (m step)
+%%%
+
+Theorem free_head_var_red_root_db_false: forall T U, nabla x,
+	red_root_db (T x) (U x) ->
+    free_head_var (T x) x  -> false.
+induction on 1. intros. case H1.
+   case H2. case H3.
+   case H2. case H4. apply IH to H3 _ with x = n1.
+
+Theorem tms_with_free_head_var_are_db_normal: forall T U, nabla x,
+    ctx_cl_tm red_root_db (T x) (U x) ->
+    free_head_var (T x) x -> false.
+induction on 1. intros. case H1.
+   backchain free_head_var_red_root_db_false with x = n1.
+   case H2. apply IH to H3 H4.
+   case H2. apply IH to H3 H4.
+
+Theorem m_redexes_have_answers_on_the_left : forall T U S,
+    red_root_db (app T U) S -> is_answer T.
+induction on 1. intros. case H1.
+    search.
+    apply IH to H2. search.
+
+Theorem root_ms_and_root_db_are_incompatible : forall T U S,
+    ctx_cl_tm red_root_ms T U ->
+    ctx_cl_tm red_root_db T S -> false.
+induction on 1. intros. case H1.
+    case H3. case H2.
+        case H6.
+        apply tms_with_free_head_var_are_db_normal to H6 H4 with x = n1.
+    case H2.
+        case H4. apply answers_are_ms_normal to _ H3.
+        apply m_redexes_have_answers_on_the_left to H5. apply answers_are_ms_normal to _ H3.
+        apply IH to H3 H4.
+    case H2.
+        case H4.
+        apply IH to H3 H4.
+
+Theorem ms_normal_is_well_defined : forall T U,
+    ms_normal T -> ctx_cl_tm red_root_ms T U -> false.
+intros. case H1.
+    apply answers_are_ms_normal to H3 H2.
+    apply term_with_free_head_var_are_ms_normal to H2 H3.
+    apply root_ms_and_root_db_are_incompatible to H2 H3.
+

@@ -1,0 +1,167 @@
+Specification "processes_terms".
+Import "common_definitions".
+
+Define redn : (pt -> pt -> prop) -> pt -> pt -> prop by
+   redn R T T;
+   redn R T U:= exists S, R T S /\ redn R S U.
+
+%%%%%%%%%%
+%%
+%%  Micro Weak Head Reduction
+%%
+%%%%%%%%%%
+
+Define red_root_db : pt -> pt -> prop by
+    red_root_db (app (abs T) U) (esub T U);
+    red_root_db (app (esub T S) U) (esub V S) 
+    		:= nabla x, red_root_db (app (T x) U) (V x).
+
+Define free_head_var : pt -> pt -> prop by
+    nabla x, free_head_var x x;
+    nabla x, free_head_var (app (T x) (U x)) x := nabla x, free_head_var (T x) x;
+    nabla x, free_head_var (esub (T x) (U x)) x := nabla x y, free_head_var (T x y) x.
+
+Define max_whead_ctx : pt -> (pt -> pt) -> prop by
+    nabla x, max_whead_ctx x (h\h);
+    max_whead_ctx (abs T) (h\h);
+    max_whead_ctx (app T U) (x\ app (W x) U) := max_whead_ctx T W;
+    max_whead_ctx (esub T U) (y\ esub (x\ W x y) U) := nabla x, max_whead_ctx (T x) (W x).
+
+Theorem free_head_var_in_ctx_gives_tm : forall T W, nabla x,
+    free_head_var (T x) x ->
+    max_whead_ctx (T x) (W x) -> T x = W x x.
+
+induction on 1. intros. case H1.
+   case H2. search.
+   case H2. apply IH to H3 _. search.
+   case H2. apply IH to H3 _. search.
+
+Define red_root_ms      : pt -> pt -> prop  by
+    red_root_ms (esub T U) (esub (x\ W x U) U) :=
+    nabla x, free_head_var (T x) x /\ max_whead_ctx (T x) (W x).
+
+Define ctx_cl_tm : (pt -> pt -> prop) -> (pt -> pt -> prop) by
+   ctx_cl_tm R T U := R T U;
+   ctx_cl_tm R (app T S) (app U S) := ctx_cl_tm R T U;
+   ctx_cl_tm R (esub T S) (esub U S) := 
+      nabla x, ctx_cl_tm R (T x) (U x).
+
+Define red_mwh : pt -> pt -> prop  by
+    red_mwh T U := ctx_cl_tm red_root_ms T U;
+    red_mwh T U := ctx_cl_tm red_root_db T U.
+
+Define is_answer : pt -> prop by
+    is_answer (abs T);
+    is_answer (esub T U) := nabla x, is_answer (T x).
+
+Define ms_normal  : pt -> prop  by
+    ms_normal T := is_answer T;
+    nabla x, ms_normal (T x) := nabla x, free_head_var (T x) x;
+    ms_normal T := exists U, ctx_cl_tm red_root_db T U.
+
+%%%%%%%%%%
+%%
+%%  Reachable and related stuff
+%%
+%%%%%%%%%%
+
+Define tm_with_no_ES : pt -> prop by
+    nabla x, tm_with_no_ES x;
+    tm_with_no_ES (abs T) := nabla x, tm_with_no_ES (T x);
+    tm_with_no_ES (app T U) := tm_with_no_ES T /\ tm_with_no_ES U.
+
+Define reachable_tm : pt -> prop by
+    nabla x, reachable_tm x;
+   reachable_tm (abs T) := tm_with_no_ES (abs T);
+   reachable_tm (app T U) := reachable_tm T /\ tm_with_no_ES U;
+   reachable_tm (esub T U) := (nabla x, reachable_tm (T x)) /\ tm_with_no_ES U.
+
+Theorem tms_with_no_ES_are_reachable : forall T, 
+    tm_with_no_ES T -> reachable_tm T.
+induction on 1. intros. case H1.
+    search.
+    search.
+    apply IH to H2. search.
+
+Theorem plugging_preserves_reachable : forall T U W S,
+    free_head_var T U ->
+    max_whead_ctx T W -> 
+    reachable_tm T -> 
+    tm_with_no_ES S -> reachable_tm (W S).
+induction on 1. intros. case H1.
+    case H2. apply tms_with_no_ES_are_reachable to H4. search.
+    case H2. case H3. apply IH to H5 H6 H7 H4. search.
+    case H2. case H3. apply IH to H5 H6 H7 H4. search.
+
+Theorem red_root_ms_preserves_reachable : forall T U,
+    red_root_ms T U -> 
+    reachable_tm T -> reachable_tm U.
+intros. case H1. case H2. apply plugging_preserves_reachable to H3 H4 H5 H6. search.
+
+Theorem red_ms_preserves_reachable : forall T U,
+    ctx_cl_tm red_root_ms T U ->
+    reachable_tm T -> reachable_tm U.
+induction on 1. intros. case H1.
+    apply red_root_ms_preserves_reachable to H3 H2. search.
+    case H2. apply IH to H3 H4. search.
+    case H2. apply IH to H3 H4. search.
+
+Theorem red_root_db_preserves_reachable : forall T U,
+    red_root_db T U -> 
+    reachable_tm T -> reachable_tm U.
+induction on 1. intros. case H1.
+    case H2. case H3. case H5. apply tms_with_no_ES_are_reachable to H6. search.
+    case H2. case H4. apply IH to H3 _. search.
+
+Theorem red_db_preserves_reachable : forall T U,
+    ctx_cl_tm red_root_db T U ->
+    reachable_tm T -> reachable_tm U.
+induction on 1. intros. case H1.
+    apply red_root_db_preserves_reachable to H3 H2. search.
+    case H2. apply IH to H3 H4. search.
+    case H2. apply IH to H3 H4. search.
+
+Theorem red_mwh_preserves_reachable : forall T U,
+    red_mwh T U ->
+    reachable_tm T -> reachable_tm U.
+intros. case H1.
+    apply red_ms_preserves_reachable to H3 H2. search.
+    apply red_db_preserves_reachable to H3 H2. search.
+
+Theorem redn_mwh_preserves_reachable : forall T U,
+    redn red_mwh T U -> 
+    reachable_tm T -> reachable_tm U.
+induction on 1. intros. case H1.
+    search.
+    apply red_mwh_preserves_reachable to H3 H2. apply IH to H4 H5. search.
+
+Theorem redn_mwh_preserves_reachable2 : forall T U N,
+    redn_nat red_mwh T U N -> 
+    reachable_tm T -> reachable_tm U.
+induction on 1. intros. case H1.
+    search.
+    apply red_mwh_preserves_reachable to H3 H2. apply IH to H4 H5. search.
+
+Theorem append_ms : forall T U S,
+    redn (ctx_cl_tm red_root_ms) T U ->
+    ctx_cl_tm red_root_ms U S ->
+        redn (ctx_cl_tm red_root_ms) T S.
+induction on 1. intros. case H1.
+    search.
+    apply IH to H4 H2. search.
+
+Theorem append_mwh : forall T U S,
+    redn red_mwh T U ->
+    red_mwh U S ->
+        redn red_mwh T S.
+induction on 1. intros. case H1.
+    search.
+    apply IH to H4 H2. search.
+
+Theorem append_mwh_sequence : forall T U S,
+    redn red_mwh T U ->
+    redn red_mwh U S ->
+        redn red_mwh T S.
+induction on 1. intros. case H1.
+    search.
+    apply IH to H4 H2. search.

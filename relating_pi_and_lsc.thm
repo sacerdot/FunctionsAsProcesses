@@ -1,0 +1,471 @@
+Specification "processes_terms".
+Import "postponement_of_structural_equivalence".
+Import "micro_weak_head".
+
+Define is_nat : nat -> prop by
+    is_nat z;
+    is_nat (s N) := is_nat N.
+
+%%%%%%%%%%
+%%
+%%  Definition of the translation
+%%
+%%%%%%%%%%
+
+Define translation : pt -> (pt -> pt) -> prop by
+    nabla x, translation x (out x);
+    translation (abs U) (a\in2 a P) := nabla x, translation (U x) (P x);
+    translation (app U V) (a\nu b\nu x\par (P b) (par (out2 b x a) (in x Q)))
+      := translation U P /\ translation V Q;
+    translation (esub U V) (a\nu x\par (P x a) (in x Q)) 
+      := (nabla x, translation (U x) (P x)) /\ translation V Q.
+
+Theorem translation_is_a_function : forall T P Q,
+	translation T P -> translation T Q -> P = Q.
+induction on 1. intros. case H1.
+	case H2. search.
+	case H2. apply IH to H3 H4. search.
+	case H2. apply IH to H3 H5. apply IH to H4 H6. search.
+    case H2. apply IH to H3 H5. apply IH to H4 H6. search.
+
+Theorem every_tm_with_no_ES_translates_to_a_process : forall T,
+    tm_with_no_ES T ->
+        exists P, translation T P.
+induction on 1. intros. case H1.
+    search.
+    apply IH to H2. search.
+    apply IH to H2. apply IH to H3. search.
+
+Theorem every_reachable_tm_translates_to_a_process : forall T,
+    reachable_tm T ->
+        exists P, translation T P.
+induction on 1. intros. case H1.
+    search.
+    case H2. apply every_tm_with_no_ES_translates_to_a_process to H3. search.
+    apply IH to H2. apply every_tm_with_no_ES_translates_to_a_process to H3. search.
+    apply IH to H2. apply every_tm_with_no_ES_translates_to_a_process to H3. search.
+
+%%%%%%%%%%
+%%
+%%  1a. simulation of micro substitution by replication reduction
+%%
+%%%%%%%%%%
+    
+Theorem rep_simulates_root_ms_aux : forall T W U P Q, nabla x, 
+    free_head_var (T x) x -> 
+    max_whead_ctx (T x) (W x) ->
+    translation (esub T U) (a\ nu (P a)) -> 
+    translation (esub (x\ W x U) U) (a\ nu (Q a)) ->
+    exists O, nabla a x, 
+        new_pi-red_root_rep (P a x) (O a x) /\ 
+        str_eq (O a x) (Q a x).
+induction on 1. intros. case H1.
+    % weak head ctx is empty
+    case H2. case H3. case H5. case H4. apply translation_is_a_function to H6 H7. apply translation_is_a_function to H6 H8. search. 
+
+% weak head ctx is app
+    case H2. case H3. case H4. case H7. case H9. apply translation_is_a_function to H10 H8. apply translation_is_a_function to H14 H12. apply IH to H5 H6 _ _.
+exists a\y\nu (b\nu (x\par (O b y) (par (out2 b x a) (in x (Q3 y))))). intros. split. search.
+        unfold 3. exists nu (b\nu (x\par (par (P4 n2 b) (in n2 Q2)) (par (out2 b x n1) (in x (Q3 n2))))). split. search.
+        unfold 3. exists nu (b\nu (x\par  (P4 n2 b) (par (in n2 Q2) (par (out2 b x n1) (in x (Q3 n2)))))). split. unfold 4. intros. unfold 4. search.
+        unfold 3. exists nu (b\nu (x\par  (P4 n2 b) (par (par (out2 b x n1) (in x (Q3 n2))) (in n2 Q2)))). split. unfold 4. intros. unfold 4. search.
+        unfold 3. exists nu (b\nu (x\par  (par (P4 n2 b)  (par (out2 b x n1) (in x (Q3 n2)))) (in n2 Q2))). split. unfold 4. intros. unfold 4. search.
+        unfold 3. exists nu (b\ par  (nu (x\par (P4 n2 b)  (par (out2 b x n1) (in x (Q3 n2))))) (in n2 Q2)). split. unfold 4. search. search.
+
+    % weak head ctx is esub
+    case H2. case H3. case H4. case H7. case H9. apply translation_is_a_function to H10 H8. apply translation_is_a_function to H12 H14. apply IH to H5 H6 _ _.
+exists a\y\nu (x\par (O x a y) (in x (Q4 y))). intros. split. search.
+        unfold 3. exists (nu (x\par (par (P4 n2 x n1) (in n2 Q2)) (in x (Q4 n2)))). split. unfold 4. search.
+        unfold 3. exists (nu (x\par (P4 n2 x n1) (par (in n2 Q2) (in x (Q4 n2))))). split. unfold 4. search.
+        unfold 3. exists (nu (x\par (P4 n2 x n1) (par (in x (Q4 n2)) (in n2 Q2)))). split. unfold 4. search.
+        unfold 3. exists (nu (x\par (par (P4 n2 x n1) (in x (Q4 n2))) (in n2 Q2))). split. unfold 4. search. search.
+    
+
+Theorem rep_simulates_root_ms : forall T U, 
+    red_root_ms T U -> 
+    reachable_tm T -> 
+        exists P Q O, nabla a, 
+            translation T P /\
+            translation U Q /\
+            ctx_cl_pr new_pi-red_root_rep (P a) (O a) /\ 
+            str_eq (O a) (Q a).
+intros. apply red_root_ms_preserves_reachable to H1 H2. case H1. apply every_reachable_tm_translates_to_a_process to H2. apply every_reachable_tm_translates_to_a_process to H3. case H6. case H7. apply translation_is_a_function to H11 H9. apply rep_simulates_root_ms_aux to H4 H5 _ _. search.
+
+Theorem rep_simulates_ms : forall T U, 
+    ctx_cl_tm red_root_ms T U -> 
+    reachable_tm T -> 
+        exists P Q O, nabla a, 
+            translation T P /\
+            translation U Q /\
+            ctx_cl_pr new_pi-red_root_rep (P a) (O a) /\ 
+            str_eq (O a) (Q a).
+induction on 1. intros. case H1.
+    apply rep_simulates_root_ms to H3 H2. search.
+    case H2. apply IH to H3 H4. apply every_tm_with_no_ES_translates_to_a_process to H5. search.
+    case H2. apply IH to H3 H4. apply every_tm_with_no_ES_translates_to_a_process to H5. search.
+
+
+%%%%%%%%%%
+%%
+%%  1b. simulation of beta at a distance by bin reduction
+%%
+%%%%%%%%%%
+
+Theorem root_bin_simulates_root_db : forall M N P Q, 
+    red_root_db M N -> 
+    translation M (a\ nu(b\ nu (P b a))) ->
+    translation N Q ->
+    exists O, nabla a b x, 
+        new_pi-red_root_bin (P b a x) (O b a x) /\ 
+        str_eq (nu(b\ nu (x\ O b a x))) (Q a).
+induction on 1. intros. case H1.
+    case H2. case H3. case H4. apply translation_is_a_function to H5 H7. apply translation_is_a_function to H6 H8. 
+    exists z2\z3\z4\par (P2 z4 z3) (in z4 Q2). intros. split. 
+        unfold. search.
+        search.
+    case H2. case H5. case H3. apply translation_is_a_function to H8 H10. 
+apply IH to H4 _ _ with Q = P3 n1. exists z5\z6\z7\nu (z8\par (O z8 z5 z6 z7) (in z8 Q3)). intros. split.
+    search.
+    unfold 3. exists (nu (b\nu (z8\nu (x\par (O z8 b n1 x) (in z8 Q3))))). split. unfold 4. search.
+    unfold 3. exists (nu (z8\nu (b\nu (x\par (O z8 b n1 x) (in z8 Q3))))). split. search.
+    unfold 3. exists (nu (z8\nu (b\ par (nu (x\O z8 b n1 x)) (in z8 Q3)))). split. unfold 4. intros. unfold 4. search.
+    unfold 3. exists (nu (z8\par (nu (b\ nu (x\O z8 b n1 x))) (in z8 Q3))). split. unfold 4. search.
+    unfold 3. exists nu (z8\ (par (P3 z8 n1) (in z8 Q3))). split. search.
+    search.
+
+Theorem rep_simulates_root_db : forall T U, 
+    red_root_db T U -> 
+    reachable_tm T -> 
+        exists P Q O, nabla a, 
+            translation T P /\
+            translation U Q /\
+            ctx_cl_pr new_pi-red_root_bin (P a) (O a) /\ 
+            str_eq (O a) (Q a).
+intros. apply red_root_db_preserves_reachable to H1 H2. apply every_reachable_tm_translates_to_a_process to H2. apply every_reachable_tm_translates_to_a_process to H3. case H1 (keep). 
+    case H4 (keep). apply root_bin_simulates_root_db to H1 H4 _. search.
+    case H4 (keep). apply root_bin_simulates_root_db to H1 H4 _. search.
+
+Theorem bin_simulates_db : forall T U, 
+    ctx_cl_tm red_root_db T U -> 
+    reachable_tm T -> 
+        exists P Q O, nabla a, 
+            translation T P /\
+            translation U Q /\
+            ctx_cl_pr new_pi-red_root_bin (P a) (O a) /\ 
+            str_eq (O a) (Q a).
+induction on 1. intros. case H1.
+    apply rep_simulates_root_db to H3 H2. search.
+    case H2. apply IH to H3 H4. apply every_tm_with_no_ES_translates_to_a_process to H5. search.
+    case H2. apply IH to H3 H4. apply every_tm_with_no_ES_translates_to_a_process to H5. search.
+
+
+%%%%%%%%%%
+%%
+%%  1c. simulation of mwh by pi
+%%
+%%%%%%%%%%
+
+Theorem pi_simulates_mwh : forall T U, 
+    red_mwh T U -> 
+    reachable_tm T -> 
+        exists P Q O, nabla a, 
+            translation T P /\
+            translation U Q /\
+            new_pi-red (P a) (O a) /\ 
+            str_eq (O a) (Q a).
+intros. case H1.
+    apply rep_simulates_ms to H3 H2. search.
+    apply bin_simulates_db to H3 H2. search.
+
+Theorem redn_pi_simulates_redn_mwh : forall T U N, 
+    redn_nat red_mwh T U N -> 
+    reachable_tm T -> 
+        exists P Q O, nabla a, 
+            translation T P /\
+            translation U Q /\
+            redn_nat new_pi-red (P a) (O a) N /\ 
+            str_eq (O a) (Q a).
+induction on 1. intros. case H1 (keep).
+    apply every_reachable_tm_translates_to_a_process to H2. search.
+    apply pi_simulates_mwh to H3 H2. apply red_mwh_preserves_reachable to H3 H2. apply IH to H4 H9. apply translation_is_a_function to H10 H6. apply str_eq_sym to H8. apply strong_postponement_streq to H14 H12. apply str_eq_sym to H16. search. 
+
+
+%%%%%%%%%%
+%%
+%%  LSC simulates Pi
+%%
+%%%%%%%%%%
+
+%%%%%%%%%%
+%%  2a. micro substitution simulates replication
+%%%%%%%%%%
+
+Theorem root_ms_simulates_root_rep_aux : forall T U P Q R, nabla x a,
+	translation (T x) (P x) ->
+	translation U Q ->
+	new_pi-red_root_rep (par (P x a) (in x Q)) (R x a) ->
+	exists W O, nabla x a, 
+		free_head_var (T x) x /\ 
+        max_whead_ctx (T x) (W x) /\
+		translation (esub (x\ W x U) U) (a\ nu (x\O x a)) /\
+		str_eq (R x a) (O x a).
+induction on 1. intros. case H1.
+    % case M = y
+    case H3.
+
+    % case M = x
+    case H3.  search.
+
+    % case M abstraction
+    case H3.
+
+    % case M application
+    case H3. case H6. case H7. 
+        apply root_rep_no_creation_of_free_names to H8. apply root_rep_no_creation_of_free_names to H8. apply IH to H4 H2 H8. case H11. apply translation_is_a_function to H2 H14. permute (n3 n2) H8. exists (x\y\ app (W x y) (V x)).  exists     x\ a\ par (nu b\ nu y\ par (P2 x b) (par (out2 b y a) (in y (Q1 x)))) (in x Q2).  intros. split.
+            search.
+            search.
+            search.
+            unfold 3. exists (nu(z3\nu(z4\par (par (P2 n1 z3) (in n1 Q2)) (par (out2 z3 z4 n2) (in z4 (Q1 n1)))))). split.
+                search.
+                unfold 3.  exists nu (b\ par (nu (x\ par (P2 n1 b) (par (out2 b x n2) (in x (Q1 n1))))) (in n1 Q2)). split.
+                    unfold 4. intros. unfold 3. exists nu (x\ par (par (P2 n1 n3) (par (out2 n3 x n2) (in x (Q1 n1)))) (in n1 Q2)). split.
+                        unfold 4. intros. unfold 3. exists par  (P2 n1 n3) (par (in n1 Q2)  (par (out2 n3 n4 n2) (in n4 (Q1 n1)))). split.
+                            search.
+                            unfold 3. exists par  (P2 n1 n3) (par (par (out2 n3 n4 n2) (in n4 (Q1 n1))) (in n1 Q2)). split.
+                                search.
+                                search.
+                        search.
+                    search.
+        case H8. case H9. case H9.
+    
+    % case M substitution
+    case H3. case H6.
+        apply IH to H4 H2 _. case H10. apply translation_is_a_function to H2 H13. exists (x\z\ esub (y\W y x z) (V x)). exists z5\z4\par (nu (x\par (P2 x z5 z4) (in x (Q1 z5)))) (in z5 Q). intros. split.
+            search.
+            search.
+            search.
+            unfold 3. permute (n2 n3) H11. exists nu (z3\par (par (P2 z3 n1 n2) (in n1 Q)) (in z3 (Q1 n1))). split.
+                search.
+                unfold 3. exists nu (x\ par (par (P2 x n1 n2) (in x (Q1 n1))) (in n1 Q)). split.
+                    unfold 4. intros. unfold 3. exists par (P2 n3 n1 n2) (par (in n1 Q) (in n3 (Q1 n1))). split.
+                        search.
+                        unfold 3. exists par (P2 n3 n1 n2) (par (in n3 (Q1 n1)) (in n1 Q)). split.
+                            search.
+                            search.
+                    search.
+        case H7.
+
+Theorem root_ms_simulates_root_rep : forall T P Q, nabla x a, 
+    translation T (a\ nu (x\ P x a)) -> 
+    new_pi-red_root_rep (P x a) (Q x a) 
+    -> exists U Q1, nabla x a,  
+        red_root_ms T U /\ 
+        translation U (a\ nu (x\ Q1 x a)) /\
+        str_eq (Q x a) (Q1 x a).
+intros. case H1.
+    case H2.
+    apply root_ms_simulates_root_rep_aux to H3 H4 H2. search.
+
+%%%
+% Simulation of inductive steps
+%%%
+Theorem root_rep_impossible_case : forall P Q R, nabla a, 
+   new_pi-red_root_rep (par (in a (P a)) Q) (R a) -> false.
+induction on 1. intros. case H1.
+    apply IH to H2. 
+    apply IH to H2. 
+    apply IH to H2.
+
+Theorem root_rep_impossible_case_2 : forall P Q, nabla a b c,
+   new_pi-red_root_rep (par (out2 a b c) (P a)) (Q a c b) -> false.
+induction on 1. intros. case H1.
+    apply IH to H2. 
+    apply IH to H2. 
+    apply IH to H2.
+
+Theorem ms_simulates_bang : forall T P Q, nabla a, 
+    translation T P -> 
+    ctx_cl_pr new_pi-red_root_rep (P a) (Q a) 
+    -> exists U Q1, nabla a,  
+        ctx_cl_tm red_root_ms T U /\ 
+        translation U Q1 /\
+        str_eq (Q a) (Q1 a).
+induction on 1. intros. case H1.
+    % T variable
+    case H2. case H3.
+
+    % T abstraction
+    case H2. case H4.
+
+    % T application
+    case H2.
+        case H5.
+        case H5.
+            case H6.
+            case H6.
+                % root step, which is shown to be impossible via some auxiliary lemmas
+                apply root_rep_parallel_symmetry to H7. apply aux_properties_postponement_parallel_cases_rep to H8. case H10.
+                    apply root_rep_impossible_case_2 to H11.
+                    apply root_rep_impossible_case to H11.
+                % inductive step, following by the IH
+                apply rep_no_creation_of_free_names to H7. apply rep_no_creation_of_free_names to H7. apply IH to H3 H7. search.
+                % further inductive case, which is however impossible.
+                case H7.
+                    case H8.
+                    case H8. case H9.
+                    case H8. case H9.
+    
+    % T substitution
+    case H2.
+        case H5.
+        case H5.
+            % root step, which is uses its dedicated lemma
+            permute (n2 n1) H6. apply root_ms_simulates_root_rep to _ H6 with T = esub U V, x = n1. search.
+            %inductive step, following by the IH
+            permute (n2 n1) H6. apply IH to H3 H6. search.
+            % further inductive case, which is however impossible.
+            case H6. case H7.
+
+%%%%%%%%%%
+%%  2b. beta at a distance simulates binary communication
+%%%%%%%%%%
+
+Theorem root_bin_impossible_case : forall P Q R, nabla a, 
+   new_pi-red_root_bin (par (in a (P a)) (Q a)) (R a) -> false.
+induction on 1. intros. case H1.
+    apply IH to H2. 
+    apply IH to H2. 
+    apply IH to H2.
+
+Theorem root_bin_impossible_case2 : forall P Q, nabla a b c,
+   new_pi-red_root_bin (par (out2 a b c) (P b c)) (Q a b c) -> false.
+induction on 1. intros. case H1.
+    apply IH to H2. 
+    apply IH to H2. 
+    apply IH to H2.
+
+Theorem root_db_simulates_root_bin : forall T U P Q R, nabla a b c,
+    translation T P -> 
+    translation U R -> 
+    new_pi-red_root_bin (par (P b) (par (out2 b c a) (in c R))) (Q b a c)
+    -> exists V O, nabla a, 
+        red_root_db (app T U) V /\ 
+        translation V O /\ 
+        str_eq (nu (b\ nu (c\ (Q b a c)))) (O a).
+induction on 1. intros. case H1.
+    % T is a variable
+    case H3.
+        case H4.
+        case H4.
+    
+    % T is an abstraction
+    apply root_bin_parallel_symmetry to H3. apply aux_properties_postponement_parallel_cases_bin to H5. case H6. 
+        case H7. search.
+        case H7.
+
+    % T is an application
+    apply aux_properties_postponement_name_restriction_bin to H3. apply aux_properties_postponement_name_restriction_bin to H6. apply aux_properties_postponement_parallel_cases_bin to H8. case H10.
+        apply root_bin_parallel_symmetry to H11. apply aux_properties_postponement_parallel_cases_bin to H13. case H14.
+            apply root_bin_impossible_case2 to H15.
+            apply root_bin_impossible_case to H15.
+        case H11.
+            case H13.
+                case H14.
+                case H14.
+            case H13.
+                case H14.
+                case H14.
+            case H13.
+                case H14.
+                case H14.
+            case H13.
+                case H14.
+                case H14.
+
+    % T is a substitution
+    apply aux_properties_postponement_name_restriction_bin to H3. apply aux_properties_postponement_parallel_cases_bin to H6. case H8.
+        apply IH to H4 H2 _. exists esub V1 V. exists (a\nu x\par (O x a) (in x Q1)). intros. split.
+            search.
+            search.
+            unfold 3. exists (nu (b\nu (c\(nu (S c n1 b))))). split.
+                search.
+                unfold 3. exists (nu (b\ nu (c\ nu (d\ par (T1 c n1 b d) (in d Q1))))). split.
+                    search.
+                    unfold 3. exists (nu (b\ nu (d\ nu (c\ par (T1 c n1 b d) (in d Q1))))). split.
+                        search.
+                        unfold 3. exists (nu (d\ nu (b\ nu (c\ par (T1 c n1 b d) (in d Q1))))). split.
+                            search.
+                            unfold 3. exists (nu (d\ nu (b\ par (nu (c\ T1 c n1 b d)) (in d Q1)))). split.
+                                unfold 4. intros. unfold 4. search.
+                                unfold 3. exists (nu (d\ par (nu (b\ nu (c\ T1 c n1 b d))) (in d Q1))). split.
+                                    unfold 4. search.
+                                    search.
+        case H9.
+            case H11.
+            case H11.
+
+%%%
+% Simulation of inductive steps
+%%%
+Theorem db_simulates_bin : forall T P Q, nabla a, 
+    translation T P -> 
+    ctx_cl_pr new_pi-red_root_bin (P a) (Q a) 
+    -> exists U Q1, nabla a,  
+        ctx_cl_tm red_root_db T U /\ 
+        translation U Q1 /\ 
+        str_eq (Q a) (Q1 a).
+induction on 1. intros. case H1.
+    % T is a variable
+    case H2. case H3.
+
+    % T is an abstraction
+    case H2. case H4.
+    
+    % T is an application
+    case H2. 
+        case H5.
+        case H5. 
+            case H6.
+            case H6.
+                apply root_db_simulates_root_bin to H3 H4 H7. search.
+                apply bin_no_creation_of_free_names to H7. apply bin_no_creation_of_free_names to H7. apply IH to H3 H7. search.
+                case H7.
+                    case H8.
+                    case H8. case H9.
+                    case H8. case H9.
+    
+    % T is a substitution
+    case H2.
+        case H5.
+        case H5. 
+            apply root_bin_parallel_symmetry to H6. apply root_bin_impossible_case to H7.
+            apply IH to H3 _. search.
+            case H6. case H7.
+
+%%%
+% PUTTING EVERYTHING TOGETHER
+%%%
+
+Theorem mwh_simulates_pi : forall T P Q, nabla a, 
+    translation T P -> 
+    new_pi-red (P a) (Q a) 
+    -> exists U Q1, nabla a,  
+        red_mwh T U /\ 
+        translation U Q1 /\ 
+        str_eq (Q a) (Q1 a).
+intros. case H2.
+    apply ms_simulates_bang to H1 H3. search.
+    apply db_simulates_bin to H1 H3. search.
+
+Theorem redn_mwh_simulates_redn_pi : forall T P Q N, nabla a, 
+    translation T P -> 
+    redn_nat new_pi-red (P a) (Q a) N ->
+    is_nat N ->
+    exists U Q1, nabla a,  
+        redn_nat red_mwh T U N /\ 
+        translation U Q1 /\ 
+        str_eq (Q a) (Q1 a).
+induction on 3. intros. case H2.
+    search.
+    apply mwh_simulates_pi to H1 H4. apply strong_postponement_streq to H8 H5. case H3. apply IH to H7 H9 H11. search. 
+
